@@ -1,0 +1,221 @@
+---
+title: "Project Part 2"
+author: "Aubrey Anderson, Lucy Synnestvedt, Rothavy Kong"
+format: pdf
+embed-resources: true
+editor: visual 
+---
+
+```{r, echo=FALSE, include=FALSE}
+library(openintro)
+library(BSDA)
+library(mosaicData)
+library(usdata)
+library(readr)
+library(tidyverse)
+library("here")
+library(leaps)
+library(broom)
+library(car)
+library(glmnet)
+load(here("Data", "forestfires1.Rdata"))
+load(here("Data","forestfires_non0.Rdata"))
+forestfires1=forestfires1[-c(14,15)]
+```
+
+# Part 1:
+
+```{r}
+null=lm(area~1, data=forestfires1)
+full=lm(area~., data=forestfires1)
+step_forward=step(null, scope=list(lower=null, upper=full))
+step_backward=step(full, scope=list(lower=null), direction = "backward")
+summary(step_forward)
+summary(step_backward)
+step_reg=regsubsets(area~.,data=forestfires1)
+summary(step_reg)
+plot(step_reg)
+```
+
+# Part 2:
+
+```{r}
+reduced_lm = lm(area~temp + DMC + Rain + season, data = forestfires1)
+full_lm = lm(area~temp + DMC + Rain + season*temp, data= forestfires1)
+full2_lm = lm(area~temp + DMC + Rain + season*DMC, data= forestfires1)
+summary(full_lm)
+anova(reduced_lm, full_lm)
+anova(reduced_lm, full2_lm)
+rain1_lm = lm(area~temp + DMC + season + temp*Rain, data = forestfires1)
+summary(rain1_lm)
+rain2_lm = lm(area~temp + DMC + season + DMC*Rain, data = forestfires1)
+summary(rain2_lm)
+```
+
+2.1:
+
+```{r}
+ggplot(data=forestfires1,
+       aes(y=area, x=temp, color= season))+
+  geom_point()
+```
+
+# Part 3:
+
+Chosen Model without Transformations
+
+3.1
+```{r}
+proj2_lm=lm(area~temp+DMC+Rain+season, data=forestfires1)
+
+augment(proj2_lm)
+proj2_resid=ggplot(data=augment(proj2_lm),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+plot(proj2_resid)
+```
+
+3.2
+```{r}
+ggplot(data=augment(proj2_lm),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```
+
+3.3
+```{r}
+crPlot(proj2_lm,"temp")
+```
+
+3.4
+```{r}
+crPlot(proj2_lm,"DMC")
+```
+
+
+Log of Response Variable
+
+3.5
+```{r}
+proj2_lm1=lm(log(area+1)~temp+DMC+Rain+season, data=forestfires1)
+
+ggplot(data=augment(proj2_lm1),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+```
+
+3.6
+```{r}
+ggplot(data=augment(proj2_lm1),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```
+
+Square root of response 
+
+3.7
+```{r}
+proj2_lm2=lm(sqrt(area)~temp+DMC+Rain+season, data=forestfires1)
+
+ggplot(data=augment(proj2_lm2),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+```
+
+3.8
+```{r}
+ggplot(data=augment(proj2_lm2),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```
+
+Log of area without rain or season
+
+3.9
+```{r}
+proj2_lm3=lm(log(area+1)~temp+DMC, data=forestfires1)
+
+ggplot(data=augment(proj2_lm3),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+```
+
+3.10
+```{r}
+ggplot(data=augment(proj2_lm3),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```
+
+Sqrt of area without rain or season 
+
+3.11
+```{r}
+proj2_lm4=lm(sqrt(area)~temp+DMC, data=forestfires1)
+
+ggplot(data=augment(proj2_lm4),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+```
+
+3.12
+```{r}
+ggplot(data=augment(proj2_lm4),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```
+
+Log transformation on area with an interaction between DMC and Rain
+
+3.13
+```{r}
+proj2_lm5=lm(log(area+1)~temp+DMC+Rain+season+DMC*Rain, data=forestfires1)
+
+ggplot(data=augment(proj2_lm5),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+```
+
+3.14
+```{r}
+ggplot(data=augment(proj2_lm5),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```
+
+# Part 4: Log of area without rain or season?
+
+```{r}
+summary(proj2_lm3)
+summary(proj2_lm1)
+confint(proj2_lm1)
+
+predict(proj2_lm1, data.frame(temp=20, DMC=100, Rain="NO", season="SUMMER"),
+        interval="prediction")
+```
+
+4.1
+```{r}
+crPlot(proj2_lm1,"temp")
+```
+
+4.2
+```{r}
+crPlot(proj2_lm1,"DMC")
+```
+
+4.3
+```{r}
+augment(proj2_lm1)
+proj2_resid1=ggplot(data=augment(proj2_lm1),
+       aes(x=.fitted,y=.resid))+
+  geom_point()
+plot(proj2_resid)
+```
+
+4.4
+```{r}
+ggplot(data=augment(proj2_lm1),
+       aes(sample=.resid)) + stat_qq() + 
+  stat_qq_line()
+```

@@ -1,0 +1,140 @@
+﻿---
+title: "Part2"
+author: "Aubrey Anderson, Lucy Synnestvedt, Rothavy Kong"
+format: pdf
+embed-resources: true
+editor: visual 
+  markdown: 
+    wrap: 72
+---
+
+# Step 1: Preparation:
+
+```{r}
+{r, echo=FALSE, include=FALSE}
+{r, echo=FALSE, include=FALSE}
+library(tidyverse)
+library(here)
+library(car)
+library(broom)
+load(here("Data", "forestfires.Rdata"))
+forestfires_non0=subset(forestfires1,area!=0)
+```
+
+Target: Area Quantitative Predictors: Temp and DMC
+
+Temperature: Here we propose a linear model.
+
+phat(area) = 3.221 + .324(temp)
+
+B1: The area of the forest fire is expected to increase by 0.3239 hectares for a 1 degree Celsius increase in the temperature.
+
+Model Utility Test: H0: B1 = 0, Ha: B1 != 0, t = 1.559 p = 0.120. Since p \> a = .05, we fail to reject the null hypothesis. We do not have statistically significant evidence that the model is useful for predicting the burned area of a forest fire. We also do not have statistically significant evidence that the temperature is useful for predicting the burned area of a forest fire.
+
+```{r}
+  ggplot(data=forestfires1, aes(x=temp, y=area))+
+  geom_point()
+  forestfiretemp_lm = lm(area~temp, data = forestfires1)
+  summary(forestfiretemp_lm)
+```
+
+DMC: Here we propose a quadratic model
+
+phat(area) = 3.684 + .081(DMC) -0.0002(DMC\^2)
+
+B2 = -0.0002054, which means that the rate of curvature between DMC and area is negative, resulting in a concave down graph.
+
+Model Utility: H0: B1=B2=0, Ha: At least one beta is non zero, F-statistic: 1.621 p-value: 0.1987, since p \> a = .05, we fail to reject the null hypothesis. We do not have statistically significant evidence that the model is useful for predicting the burned area of a forest fire.
+
+Curvature Test: H0: B2 = 0, Ha: B != 0, t = -0.962 p = 0.336, since p \> a = .05, we fail to reject the null hypothesis. We do not have statistically significant evidence that there is a curved relationship between DMC and the burned area of the forest fire.
+
+```{r}
+  ggplot(data=forestfires1, aes(x=DMC, y=area))+
+  geom_point()
+  forestfiredmc_lm = lm(area~DMC + I(DMC^2), data = forestfires1)
+  summary(forestfiredmc_lm)
+```
+
+# Step 2: Colored Graph:
+
+There does not seem to be an interaction between temp and DMC, the different colors for DMC are not clumped together, and do not seem to create different slopes between temp and area.
+
+```{r}
+ggplot(data=forestfires_non0,
+       aes(y=area, x=temp, color= DMC))+
+  geom_point()
+```
+
+Interaction Model:
+
+H0: B3 = 0, Ha: B3!=0, t = 0.663 p = 0.507, since p \> a =.05, we fail to reject the null hypothesis. We do not have statistically significant evidence that there is an interaction between temperature and DMC. This means that the relationship between temperature and burned area of the fire is not different for different values of DMC.
+
+For example: phat(area) = 6.286 + .0118(temp) - .0182(DMC) + .0021(temp)(DMC) when DMC = 2, phat(area) = 6.286 + .0118(temp) + .0042(temp), thus the slope between burned area and temp is .016, meaning that when temp increases by 1 degree Celsius, the burned area of the forest fire is expected to increase by .016. when DMC = 20, phat(area) = 6.286 + .0118(temp) + .042(temp), thus the slope between burned area and temp is .0538, meaning that when temp increases by 1 degree Celsius, the burned area of the forest fire is expected to increase by .0538.
+
+This is a very minimal change is slope, which is why the interaction term is insignificant.
+
+```{r}
+int_model=lm(area~temp*DMC, data=forestfires1)
+summary(int_model)
+```
+
+# Step 3: Our two categorical variables: Season and Rain
+
+Means of Pairwise
+
+```{r}
+mean(filter(forestfires_non0, season=="SPRING",
+            Rain=="YES")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="SPRING",
+            Rain=="NO")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="SUMMER",
+            Rain=="NO")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="SUMMER",
+            Rain=="YES")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="FALL",
+            Rain=="YES")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="FALL",
+            Rain=="NO")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="WINTER",
+            Rain=="YES")$area, na.rm=TRUE) 
+mean(filter(forestfires_non0, season=="WINTER",
+            Rain=="NO")$area, na.rm=TRUE) 
+```
+
+We are unable to tell whether an interaction model is necessary with the information from the sample means due to the missing values. There does seem to be a difference between the means with no rain an the mean with rain, but there is only one mean with rain that had a value.
+
+Main Effects Model:
+
+season and Rain Main effects model: area-hat = 11.2 - 5.64(seasonSp) - 1.88(seasonSu) - 3.28(seasonWi) - 7.2(RainY)
+
+Interpret coefficients in main effects model: B0: the expected burned area is 11.2 ha when the season is fall and there is no rain. B1: the expected burned area decreases by 5.64 ha when the season is spring and there is no rain compared to when the season if fall and there is no rain. B2: the expected burned area decreases by 1.88 ha when the season is summer and there is no rain compared to when the season is fall and there is no rain. B3: the expected burned area decreases by 3.28 ha when the season is winter and there is no rain compared to when the season is fall and there is no rain. B4: the expected burned area decreases by 7.2 ha when the season is fall and it is raining compared to when the season is fall and there is no rain.
+
+Conduct Model Utility Test H0: B1 = B2 = B3 = B4 = 0 Ha: at least one of the B is nonzero
+
+F = 0.7 p-value = 0.58
+
+Since p-value \> a = 0.05, we fail to reject the null hypothesis. We do not have statistically discernible evidence that the model is useful for predicting the burned area of the forest fire.
+
+Estimating the mean response for each group: Fall and No Rain: 11.2 Fall and Rain: 11.2 - 7.2 = 4 Spring and No Rain: 11.2 - 5.64 = 5.56 Spring and Rain: 11.2 - 5.64 - 7.2 = -1.64 Summer and No Rain: 11.2 - 1.88 = 9.32 Summer and Rain: 11.2 - 1.88 - 7.2 = 2.12 Winter and No Rain: 11.2 - 3.28 = 7.92 Winter and Rain: 11.2 - 3.28 - 7.2 = 0.72
+
+Interaction Model:
+
+Interaction model: area-hat = 11.2 - 5.67(seasonSp) - 1.87(seasonSu) - 3.28(seasonWi) - 7.2(RainY) + 1.94(seasonSp)(RainY)
+
+Testing for whether the Interaction Model is useful:
+
+H0: B5 = B6 = B7, Ha: At least one Beta is nonzero. F = 0.0043 p = 0.9477. Since p \> a = .05, we fail to reject the null hypothesis. We do not have statistically significant evidence that there is an interaction between season and whether or not it rains. We also do not have statistically significant evidence that the full model is necessary for predicting burned forest area, rather the reduced model is adequate.
+
+It is important to note that the result of the anova test when comparing the two models is the same result we would get when doing an individual beta test for B5. This is because there are not observations in our data set for some seasons when it rains, like there is no observation for when it rained in the winter. Because of this we are left with N/A's that are not tested in the anova test.
+
+How this aligns with our guess: We said that it was not possible for us to make a guess for whether an interaction would be necessary or not, but that it may have been possible from the difference with the rain variable. From the anova test, we have gathered that the interaction model is not useful for the prediction of burned area of forest fires in Ha.
+
+```{r}
+main_effect_lm = lm(area~season+Rain,data=forestfires1)
+summary(main_effect_lm)
+
+interaction_lm = lm(area~season*Rain, data=forestfires1)
+summary(interaction_lm)
+
+anova(main_effect_lm, interaction_lm)
+```
