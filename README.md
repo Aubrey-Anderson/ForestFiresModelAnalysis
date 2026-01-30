@@ -1,2 +1,2 @@
 # ForestFiresModelAnalysis
-Finding the best model for data about forest fires
+Using automated variable selection, residual analysis, and transformations to find the best model for a data set about forest fires.
